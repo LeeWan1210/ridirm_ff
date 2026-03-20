@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<style type="text/css">
+  .img_max_height {
+    max-height: 65%;
+  }
+</style>
+<div>
+  <div class="card text-center">
+    <div class="card-header">
+      <div id="list" class="card-body">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+var package_name = "{{arg['package_name']}}";
+var loading = false; //중복실행여부 확인 변수
+
+// 페이지로딩
+$(document).ready(function(){
+  request_firstLoad();
+});
+
+// 무한스크롤
+$(window).scroll(function(){
+    if($(window).scrollTop() + 200 >= $(document).height() - $(window).height()) {
+        if(!loading) {    //실행 가능 상태라면?
+            loading = true; //실행 불가능 상태로 변경
+            request_nextLoad(); // 책 정보 로드
+        }
+    }
+});
+
+// 다운로드 버튼클릭
+$("body").on('click', '#btn_download', function(e){
+    e.preventDefault();
+    var book_id = $(this).data('book_id');
+    var title = $(this).data('title');
+    var author = $(this).data('author');
+
+    $.ajax({
+      url: '/' + package_name + '/ajax/download',
+      type: "POST",
+      cache: false,
+      data: {'book_id':book_id, 'title':title, 'author':author},
+      dataType: "json",
+      success: function (data) {
+        if( data.ret == "success" ){
+          console.log("success")
+        }
+      }
+    });
+});
+
+function request_firstLoad() {
+
+  $.ajax({
+    url: '/' + package_name + '/ajax/first',
+    type: "POST",
+    cache: false,
+    data: null,
+    dataType: "json",
+    success: function (data) {
+      if( data.ret == "success" ){
+        make_list(data.book_info, false)
+      }
+    }
+  });
+}
+
+// 스크롤
+function request_nextLoad() {
+
+$.ajax({
+  url: '/' + package_name + '/ajax/next',
+  type: "POST",
+  cache: false,
+  data: null,
+  dataType: "json",
+  success: function (data) {
+    if( data.ret == "success" ){
+      if( Object.keys(data.book_info).length !== 0 ) {
+        loading = false;
+        make_list(data.book_info, true)
+      }
+    }
+  }
+});
+}
+
+// 페이지 구성 함수
+function make_list(data, flag) {
+  var i = 0;
+
+  html = '';
+
+  // 첫 로딩이 아닐 경우 기존 페이지에 추가
+  if( flag ) {
+    html = document.getElementById("list").innerHTML;
+  }
+
+  Object.keys(data).forEach(function(key) {
+
+    if(i % 4 == 0) {
+      html += '<div class="card-deck" style="padding-bottom: 15px;">';
+    }
+    html += '  <div class="card" style="width: 15rem; max-width: 15rem">';
+    html += '    <img class="card-img-top img_max_height" src=https://img.ridicdn.net/cover/'+ key +'/xxlarge#1 alt="Card image cap">';
+    html += '    <div class="card-body">';
+    html += '      <h6 class="card-title" style="height:40px">'+ data[key]['title'] +'</h6>';
+    html += '      <p class="card-text" style="height:40px">'+ data[key]['author'] +'</p>';
+    html += '      <p class="card-text">'+ data[key]['genre'] +'</p>';
+    html += '      <button id="btn_download" name="btn_download" class="btn btn-sm btn-outline-success" data-book_id="'+ key +'" data-title="'+ data[key]['title'] +'" data-author="'+ data[key]['author'] +'">다운로드</button>'
+    html += '    </div>';
+    html += '  </div>';
+
+    if(i % 4 == 3) {
+      html += '</div>';
+    }
+
+    i++;
+  })
+
+  document.getElementById("list").innerHTML = html;
+}
+
+</script>
+{% endblock %}
