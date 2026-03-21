@@ -65,6 +65,8 @@ function request_firstLoad() {
     success: function (data) {
       if( data.ret == "success" ){
         make_list(data.book_info, false)
+      } else {
+        alert(data.msg);
       }
     }
   });
@@ -85,6 +87,8 @@ $.ajax({
         loading = false;
         make_list(data.book_info, true)
       }
+    } else {
+      alert(data.msg);
     }
   }
 });
